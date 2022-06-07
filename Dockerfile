@@ -13,8 +13,11 @@ WORKDIR /usr/src/
 COPY . .
 
 # install dependencies
-RUN tlmgr update --self \
-    && tlmgr install $(cat requirements.txt | tr -s [:space:] ' ')
+RUN tlmgr update --self && \
+    tlmgr install $(cat requirements.txt | tr -s [:space:] ' ') && \
+    mkdir -p scripts/ && \
+    wget -q "https://raw.githubusercontent.com/lrbaden/memoir-mgr/main/scripts/compile_partials.sh" -O scripts/compile_partials.sh && \
+    chmod -R +x scripts
 
 # download Eisvogel template
 RUN mkdir -p "eisvogel/"  && \  
@@ -30,6 +33,12 @@ ARG TEMPLATE="/root/.local/share/pandoc/templates/eisvogel.latex"
 COPY --from=builder --chown=root /opt/texlive/ /opt/texlive/
 COPY --from=builder --chown=root /usr/src/eisvogel/eisvogel.latex "$TEMPLATE"
 COPY --from=builder --chown=root /usr/src/eisvogel/examples/ /data/
+COPY --from=builder --chown=root /usr/src/scripts/ /usr/src/scripts/
+
+# Create symlink
+RUN for f in $(ls /usr/src/scripts/*.sh); do \
+        fname="${f##*/}"; name="${fname%.sh}"; link="/usr/local/bin/$name"; \
+        ln -s  "$f" "$link"; done
 
 # Create entrypoint
 RUN echo -e '#! /bin/sh\n\nexec "$@"' > /entrypoint.sh && \
