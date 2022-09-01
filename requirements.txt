@@ -4,6 +4,7 @@ background
 bidi
 collectbox
 csquotes
+csvsimple
 everypage
 filehook
 footmisc
